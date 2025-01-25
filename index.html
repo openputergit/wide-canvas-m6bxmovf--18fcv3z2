@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LAVISH_BLISS</title>
+    <script src="https://unpkg.com/vue@next"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #A569BD;
+            --glass: rgba(255, 255, 255, 0.1);
+        }
+        .clay {
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 16px;
+            box-shadow: 35px 35px 68px 0px rgba(165, 105, 189, 0.3),
+                        inset -8px -8px 16px 0px rgba(165, 105, 189, 0.6),
+                        inset 0px 11px 28px 0px rgb(255, 255, 255);
+            backdrop-filter: blur(5px);
+        }
+        .glass {
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #f3e5f5, #e1bee7);
+            min-height: 100vh;
+        }
+        .heading {
+            font-family: 'Playfair Display', serif;
+        }
+    </style>
+</head>
+<body class="relative">
+    <div id="app">
+        <!-- Dashboard Toggle -->
+        <button @click="toggleDashboard" class="fixed top-4 left-4 z-50 p-3 clay rounded-full hover:scale-105 transition-transform">
+            <i class="bi bi-list text-2xl text-purple-600"></i>
+        </button>
+
+        <!-- Dashboard Panel -->
+        <div v-if="showDashboard" class="fixed inset-0 z-40 flex">
+            <div class="w-64 clay p-6 space-y-4">
+                <h2 class="heading text-2xl text-purple-600 font-bold mb-6">Menu</h2>
+                <nav class="space-y-3">
+                    <a href="#home" class="block p-2 rounded hover:bg-purple-100 transition">Home</a>
+                    <a href="#shop" class="block p-2 rounded hover:bg-purple-100 transition">Shop</a>
+                    <a href="#about" class="block p-2 rounded hover:bg-purple-100 transition">About</a>
+                    <a href="#contact" class="block p-2 rounded hover:bg-purple-100 transition">Contact</a>
+                </nav>
+            </div>
+            <div @click="toggleDashboard" class="flex-1 bg-black bg-opacity-50"></div>
+        </div>
+
+        <!-- Header -->
+        <header class="clay fixed top-0 w-full z-30 px-4 py-3 flex justify-between items-center">
+            <h1 class="heading text-2xl font-bold text-purple-600">LAVISH_BLISS</h1>
+            <div class="flex gap-4">
+                <button @click="toggleSearch" class="p-2 clay rounded-full hover:scale-105 transition-transform">
+                    <i class="bi bi-search text-xl text-purple-600"></i>
+                </button>
+                <button @click="toggleCart" class="p-2 clay rounded-full hover:scale-105 transition-transform">
+                    <i class="bi bi-cart text-xl text-purple-600"></i>
+                    <span v-if="cart.length" class="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center">
+                        {{cart.length}}
+                    </span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="pt-20 px-4 max-w-7xl mx-auto">
+            <!-- Hero Section -->
+            <section class="clay p-8 my-8 text-center">
+                <h2 class="heading text-4xl md:text-6xl text-purple-600 mb-4">Welcome to LAVISH_BLISS</h2>
+                <p class="text-gray-600 mb-8">Discover your perfect beauty routine</p>
+                <button class="bg-purple-600 text-white px-8 py-3 rounded-full hover:bg-purple-700 transition">
+                    Shop Now
+                </button>
+            </section>
+
+            <!-- Products Grid -->
+            <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 my-8">
+                <div v-for="product in products" :key="product.id" class="clay p-4 space-y-4">
+                    <img :src="product.image" :alt="product.name" class="w-full h-48 object-cover rounded">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 class="font-semibold">{{product.name}}</h3>
+                            <p class="text-purple-600">${{product.price}}</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button @click="toggleWishlist(product)" class="p-2 clay rounded-full">
+                                <i class="bi" :class="isInWishlist(product) ? 'bi-heart-fill text-red-500' : 'bi-heart'"></i>
+                            </button>
+                            <button @click="addToCart(product)" class="p-2 clay rounded-full">
+                                <i class="bi bi-cart-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Cart Sidebar -->
+        <div v-if="showCart" class="fixed inset-0 z-50 flex justify-end">
+            <div class="w-full md:w-96 clay p-6 overflow-y-auto">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="heading text-2xl">Your Cart</h2>
+                    <button @click="toggleCart" class="p-2"><i class="bi bi-x-lg"></i></button>
+                </div>
+                <div v-if="cart.length === 0" class="text-center py-8">
+                    Your cart is empty
+                </div>
+                <div v-else class="space-y-4">
+                    <div v-for="item in cart" :key="item.id" class="flex gap-4 clay p-4">
+                        <img :src="item.image" :alt="item.name" class="w-20 h-20 object-cover rounded">
+                        <div class="flex-1">
+                            <h3 class="font-semibold">{{item.name}}</h3>
+                            <p class="text-purple-600">${{item.price}}</p>
+                        </div>
+                        <button @click="removeFromCart(item)" class="text-red-500">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                    <div class="text-right pt-4">
+                        <p class="text-xl font-semibold">Total: ${{cartTotal}}</p>
+                        <button class="mt-4 bg-purple-600 text-white px-6 py-2 rounded-full">
+                            Checkout
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div @click="toggleCart" class="flex-1 bg-black bg-opacity-50"></div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue
+
+        createApp({
+            data() {
+                return {
+                    showDashboard: false,
+                    showCart: false,
+                    showSearch: false,
+                    products: [
+                        {
+                            id: 1,
+                            name: "Luxury Face Cream",
+                            price: 89.99,
+                            image: "https://images.unsplash.com/photo-1570194065650-d707c4776f13?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=MnwxfDB8MXxyYW5kb218MHx8Y29zbWV0aWNzfHx8fHx8MTcwMTQzMjY2NA&ixlib=rb-4.0.3&q=80&w=1080"
+                        },
+                        {
+                            id: 2,
+                            name: "Signature Perfume",
+                            price: 129.99,
+                            image: "https://images.unsplash.com/photo-1541643600914-78b084683601?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=MnwxfDB8MXxyYW5kb218MHx8cGVyZnVtZXx8fHx8fDE3MDE0MzI2NjU&ixlib=rb-4.0.3&q=80&w=1080"
+                        },
+                        {
+                            id: 3,
+                            name: "Body Lotion",
+                            price: 49.99,
+                            image: "https://images.unsplash.com/photo-1608248597279-f99d160bfcbc?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=MnwxfDB8MXxyYW5kb218MHx8bG90aW9ufHx8fHx8MTcwMTQzMjY2Ng&ixlib=rb-4.0.3&q=80&w=1080"
+                        }
+                    ],
+                    cart: [],
+                    wishlist: []
+                }
+            },
+            computed: {
+                cartTotal() {
+                    return this.cart.reduce((total, item) => total + item.price, 0).toFixed(2)
+                }
+            },
+            methods: {
+                toggleDashboard() {
+                    this.showDashboard = !this.showDashboard
+                },
+                toggleCart() {
+                    this.showCart = !this.showCart
+                },
+                toggleSearch() {
+                    this.showSearch = !this.showSearch
+                },
+                addToCart(product) {
+                    this.cart.push(product)
+                },
+                removeFromCart(product) {
+                    const index = this.cart.findIndex(item => item.id === product.id)
+                    if (index > -1) {
+                        this.cart.splice(index, 1)
+                    }
+                },
+                toggleWishlist(product) {
+                    const index = this.wishlist.findIndex(item => item.id === product.id)
+                    if (index > -1) {
+                        this.wishlist.splice(index, 1)
+                    } else {
+                        this.wishlist.push(product)
+                    }
+                },
+                isInWishlist(product) {
+                    return this.wishlist.some(item => item.id === product.id)
+                }
+            }
+        }).mount('#app')
+    </script>
+<script>document.body.addEventListener('wheel', e => { if (!e.ctrlKey) return; e.preventDefault(); return }, { passive: false })</script>
+	</body>
+</html>
